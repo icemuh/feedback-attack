@@ -1,0 +1,29 @@
+name: Build Standalone app
+
+on:
+  workflow_dispatch:   # ทำให้มีปุ่ม "Run workflow" ในแท็บ Actions
+
+jobs:
+  standalone:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Standalone
+        run: |
+          # ถ้าบิลด์ล้มเหลวที่ปุ่ม SETTINGS ให้เปลี่ยน ON เป็น OFF (ยังใช้ปุ่ม Options ของ JUCE ได้)
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DHOWL_INAPP_SETTINGS=ON
+          cmake --build build --config Release --target HowlShield_Standalone -j 4
+
+      - name: Find and zip the app
+        run: |
+          APP="$(find build -maxdepth 5 -name 'Howl Shield.app' -type d | head -n 1)"
+          echo "พบแอป: $APP"
+          test -n "$APP"
+          mkdir -p dist
+          ditto -c -k --keepParent "$APP" "dist/HowlShield-Standalone-macOS.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HowlShield-Standalone-macOS
+          path: dist/HowlShield-Standalone-macOS.zip
